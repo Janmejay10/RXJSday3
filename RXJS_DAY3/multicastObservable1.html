@@ -1,0 +1,74 @@
+<html>
+  <head>
+      <title></title>
+  </head>  
+
+  <body>
+      
+      <script src="https://unpkg.com/@reactivex/rxjs@5.3.0/dist/global/Rx.js"></script>
+ 
+ 
+ <script>
+     
+      
+        //import { interval, Subject } from 'rxjs';
+        //import { multicast } from 'rxjs/operators';
+        
+        const source = Rx.interval(500);
+        const subject = new Rx.Subject();
+        const multicasted = source.pipe(multicast(subject));
+        let subscription1, subscription2, subscriptionConnect;
+        
+        subscription1 = multicasted.subscribe({
+        next: (v) => console.log(`observerA: ${v}`)
+        });
+        // We should call `connect()` here, because the first
+        // subscriber to `multicasted` is interested in consuming values
+        subscriptionConnect = multicasted.connect();
+        
+        setTimeout(() => {
+        subscription2 = multicasted.subscribe({
+            next: (v) => console.log(`observerB: ${v}`)
+        });
+        }, 600);
+        
+        setTimeout(() => {
+        subscription1.unsubscribe();
+        }, 1200);
+        
+        // We should unsubscribe the shared Observable execution here,
+        // because `multicasted` would have no more subscribers after this
+        setTimeout(() => {
+        subscription2.unsubscribe();
+        subscriptionConnect.unsubscribe(); // for the shared Observable execution
+        }, 2000);
+
+        //output:-
+        // observerA subscribed
+        // observerA: 0
+        // observerB subscribed
+        // observerA: 1
+        // observerB: 1
+        // observerA unsubscribed
+        // observerB: 2
+        // observerB unsubscribed
+
+        /*
+        steps:-
+        1.First Observer subscribes to the multicasted Observable
+        2.The multicasted Observable is connected
+        3.The next value 0 is delivered to the first Observer
+        4.Second Observer subscribes to the multicasted Observable
+        5.The next value 1 is delivered to the first Observer
+        6.The next value 1 is delivered to the second Observer
+        7.First Observer unsubscribes from the multicasted Observable
+        8.The next value 2 is delivered to the second Observer
+        9.Second Observer unsubscribes from the multicasted Observable
+        10.The connection to the multicasted Observable is unsubscribed
+        */
+            
+  
+  
+    </script>
+    </body>
+</html>
